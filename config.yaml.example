@@ -1,0 +1,33 @@
+providers:
+  - name: "bdns-example"
+    provider: "bdns"
+    config:
+      addr: "http://dns.example.com"
+      username: "admin"
+      password: "admin"
+
+recievers:
+  - name: "bvhost-example"
+    reciever: "bvhost"
+    config:
+      addr: "http://vhost.example.com"
+      username: "admin"
+      password: "admin"
+
+users:
+  - email: "example@example.com"
+    key: "users/example.key"
+
+certs:
+  - name: "example"
+    file: "certs/example.pem"
+    user: "example@example.com"
+    domains:
+      - host: ""
+        domain: "example.com"
+        provider: "bdns-example"
+      - host: "*"
+        domain: "example.com"
+        provider: "bdns-example"
+    recievers: ["bvhost-example"]
+    
