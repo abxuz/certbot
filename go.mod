@@ -1,6 +1,6 @@
 module certbot
 
-go 1.20
+go 1.21
 
 require (
 	github.com/go-acme/lego/v4 v4.12.3
