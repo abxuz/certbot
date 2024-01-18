@@ -107,7 +107,7 @@ func (b *CertBot) process() {
 		if err != nil {
 			continue
 		}
-		if time.Until(cert.NotAfter) >= 7*24*time.Hour {
+		if time.Until(cert.NotAfter) >= 30*24*time.Hour {
 			continue
 		}
 		certs = append(certs, c)
