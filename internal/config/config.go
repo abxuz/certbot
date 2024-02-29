@@ -6,7 +6,7 @@ import (
 	"io"
 	"os"
 
-	"github.com/xbugio/b-tools/bslice"
+	"github.com/abxuz/b-tools/bslice"
 	"gopkg.in/yaml.v3"
 )
 
@@ -151,7 +151,7 @@ func (c *Cert) Valid() error {
 			return err
 		}
 	}
-	ok := bslice.Unique(len(c.Domains), func(i int) any { return c.Domains[i].Hostname() })
+	ok := bslice.Unique[string, *Domain](c.Domains, func(d *Domain) string { return d.Hostname() })
 	if !ok {
 		return fmt.Errorf("duplicate cert[%v] domain host.domain", c.Name)
 	}
@@ -159,7 +159,7 @@ func (c *Cert) Valid() error {
 }
 
 func (c *Config) Valid() error {
-	ok := bslice.Unique(len(c.Providers), func(i int) any { return c.Providers[i].Name })
+	ok := bslice.Unique[string, *Provider](c.Providers, func(p *Provider) string { return p.Name })
 	if !ok {
 		return fmt.Errorf("duplicate provider name found")
 	}
@@ -169,7 +169,7 @@ func (c *Config) Valid() error {
 		}
 	}
 
-	ok = bslice.Unique(len(c.Recievers), func(i int) any { return c.Recievers[i].Name })
+	ok = bslice.Unique[string, *Reciever](c.Recievers, func(r *Reciever) string { return r.Name })
 	if !ok {
 		return fmt.Errorf("duplicate reciever name found")
 	}
@@ -179,7 +179,7 @@ func (c *Config) Valid() error {
 		}
 	}
 
-	ok = bslice.Unique(len(c.Users), func(i int) any { return c.Users[i].Email })
+	ok = bslice.Unique[string, *User](c.Users, func(u *User) string { return u.Email })
 	if !ok {
 		return fmt.Errorf("duplicate user email found")
 	}
@@ -189,7 +189,7 @@ func (c *Config) Valid() error {
 		}
 	}
 
-	ok = bslice.Unique(len(c.Certs), func(i int) any { return c.Certs[i].Name })
+	ok = bslice.Unique[string, *Cert](c.Certs, func(c *Cert) string { return c.Name })
 	if !ok {
 		return fmt.Errorf("duplicate cert name found")
 	}
@@ -198,17 +198,17 @@ func (c *Config) Valid() error {
 			return err
 		}
 		for _, d := range cert.Domains {
-			pos := bslice.FindIndex(len(c.Providers), func(i int) bool { return c.Providers[i].Name == d.Provider })
+			pos := bslice.FindIndex[*Provider](c.Providers, func(p *Provider) bool { return p.Name == d.Provider })
 			if pos < 0 {
 				return fmt.Errorf("undefined provider[%v] in cert[%v] domain[%v]", d.Provider, cert.Name, d.Hostname())
 			}
 		}
-		ok = bslice.Unique(len(cert.Recievers), func(i int) any { return cert.Recievers[i] })
+		ok = bslice.Unique[string, string](cert.Recievers, func(s string) string { return s })
 		if !ok {
 			return fmt.Errorf("duplicate reciever found in cert[%v]", cert.Name)
 		}
 
-		pos := bslice.FindIndex(len(c.Users), func(i int) bool { return c.Users[i].Email == cert.User })
+		pos := bslice.FindIndex[*User](c.Users, func(u *User) bool { return u.Email == cert.User })
 		if pos < 0 {
 			return fmt.Errorf("undefined user[%v] in cert[%v]", cert.User, cert.Name)
 		}
