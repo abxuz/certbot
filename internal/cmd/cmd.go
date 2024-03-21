@@ -9,39 +9,30 @@ import (
 	"github.com/spf13/cobra"
 )
 
-type Cmd struct {
-	cobra.Command
+func NewCmd() *cobra.Command {
+	var configPath string
 
-	config string
-}
+	c := &cobra.Command{
+		Use: filepath.Base(os.Args[0]),
+		Run: func(cmd *cobra.Command, args []string) {
+			cfg, err := config.LoadConfigFromFile(configPath)
+			if err != nil {
+				cmd.PrintErrln(err)
+				os.Exit(1)
+			}
 
-func NewCmd() *Cmd {
-	c := &Cmd{
-		Command: cobra.Command{
-			Use: filepath.Base(os.Args[0]),
+			bot := &certbot.CertBot{
+				Cfg: cfg,
+			}
+
+			if err := bot.Run(); err != nil {
+				cmd.PrintErrln(err)
+				os.Exit(1)
+			}
 		},
 	}
 
-	c.Flags().StringVarP(&c.config, "config", "c", "config.yaml", "config file path")
+	c.Flags().StringVarP(&configPath, "config", "c", "config.yaml", "config file path")
 	c.MarkFlagFilename("config")
-
-	c.Command.Run = c.Run
 	return c
-}
-
-func (c *Cmd) Run(cmd *cobra.Command, args []string) {
-	cfg, err := config.LoadConfigFromFile(c.config)
-	if err != nil {
-		c.PrintErrln(err)
-		os.Exit(1)
-	}
-
-	bot := &certbot.CertBot{
-		Cfg: cfg,
-	}
-
-	if err := bot.Run(); err != nil {
-		c.PrintErrln(err)
-		os.Exit(1)
-	}
 }

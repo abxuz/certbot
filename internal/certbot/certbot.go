@@ -5,7 +5,6 @@ import (
 	"certbot/internal/model"
 	"certbot/provider"
 	"certbot/reciever"
-	"context"
 	"crypto/x509"
 	"encoding/pem"
 	"errors"
@@ -15,7 +14,6 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/go-acme/lego/v4/certcrypto"
 	"github.com/go-acme/lego/v4/certificate"
 	"github.com/go-acme/lego/v4/challenge/dns01"
 	"github.com/go-acme/lego/v4/lego"
@@ -70,7 +68,7 @@ func (b *CertBot) Run() error {
 
 		config := lego.NewConfig(user)
 		config.CADirURL = CADirURL
-		config.Certificate.KeyType = certcrypto.RSA2048
+		config.Certificate.KeyType = user.KeyType
 		client, err := lego.NewClient(config)
 		if err != nil {
 			return err
@@ -107,32 +105,31 @@ func (b *CertBot) process() {
 		if err != nil {
 			continue
 		}
-		if time.Until(cert.NotAfter) >= 30*24*time.Hour {
+		if time.Until(cert.NotAfter) >= 2*30*24*time.Hour {
 			continue
 		}
 		certs = append(certs, c)
 	}
 
-	ctx := context.Background()
 	eg := &errgroup.Group{}
 	eg.SetLimit(10)
 
 	for _, c := range certs {
 		c := c
 		eg.Go(func() error {
-			b.processCert(ctx, c)
+			b.processCert(c)
 			return nil
 		})
 	}
 	eg.Wait()
 }
 
-func (b *CertBot) processCert(ctx context.Context, cert *config.Cert) {
+func (b *CertBot) processCert(cert *config.Cert) {
 	user := b.users[cert.User]
 
 	config := lego.NewConfig(user)
 	config.CADirURL = CADirURL
-	config.Certificate.KeyType = certcrypto.RSA2048
+	config.Certificate.KeyType = user.KeyType
 	client, err := lego.NewClient(config)
 	if err != nil {
 		log.Println(err)
@@ -157,7 +154,7 @@ func (b *CertBot) processCert(ctx context.Context, cert *config.Cert) {
 		return
 	}
 
-	certStr := string(certificates.Certificate) + string(certificates.PrivateKey)
+	certStr := string(certificates.Certificate) + string(certificates.IssuerCertificate) + string(certificates.PrivateKey)
 	certData := []byte(certStr)
 
 	for _, r := range cert.Recievers {
