@@ -45,7 +45,11 @@ func (r *Reciever) PushCert(name string, cert []byte) error {
 	if err != nil {
 		return err
 	}
-	return r.reload()
+
+	if err := r.reload(); err != nil {
+		return err
+	}
+	return r.save()
 }
 
 func (r *Reciever) setCert(update bool, cert *Cert) error {
@@ -70,6 +74,15 @@ func (r *Reciever) setCert(update bool, cert *Cert) error {
 
 func (r *Reciever) reload() error {
 	api := r.cfg.Addr + "/api/v1/reload"
+	data, err := r.request(http.MethodGet, api, nil)
+	if err != nil {
+		return err
+	}
+	return r.errCheck(data)
+}
+
+func (r *Reciever) save() error {
+	api := r.cfg.Addr + "/api/v1/save"
 	data, err := r.request(http.MethodGet, api, nil)
 	if err != nil {
 		return err
