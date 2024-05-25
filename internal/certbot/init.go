@@ -4,6 +4,7 @@ import (
 	"certbot/internal/model"
 	"certbot/provider"
 	"certbot/provider/bdns"
+	"certbot/provider/cloudflare"
 	"certbot/reciever"
 	"certbot/reciever/bvhost"
 	"fmt"
@@ -174,6 +175,7 @@ func (cb *CertBot) initRecievers(recievers []*model.Reciever) (map[string]reciev
 
 func (cb *CertBot) initProviders(providers []*model.Provider) (map[string]provider.Provider, error) {
 	bdns.Init()
+	cloudflare.Init()
 
 	m := make(map[string]provider.Provider)
 	for _, cfg := range providers {
