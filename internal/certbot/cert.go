@@ -21,6 +21,9 @@ type CertRequest struct {
 func (r *CertRequest) LoadCert() (*x509.Certificate, error) {
 	data, err := os.ReadFile(r.File)
 	if err != nil {
+		if os.IsNotExist(err) {
+			err = nil
+		}
 		return nil, err
 	}
 

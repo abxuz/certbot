@@ -25,7 +25,7 @@ func (cb *CertBot) ServeOnce() {
 		if err != nil {
 			continue
 		}
-		if time.Until(cert.NotAfter) >= 2*30*24*time.Hour {
+		if cert != nil && time.Until(cert.NotAfter) >= 2*30*24*time.Hour {
 			continue
 		}
 		eg.Go(func() error {
