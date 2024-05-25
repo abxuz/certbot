@@ -14,9 +14,11 @@ var (
 )
 
 func RegisterFactory(factory Factory) {
-	if _, ok := factories[factory.Name()]; ok {
+	name := factory.Name()
+	if _, ok := factories[name]; ok {
 		panic("duplicate provider factory name registered")
 	}
+	factories[name] = factory
 }
 
 func GetFactory(name string) Factory {
