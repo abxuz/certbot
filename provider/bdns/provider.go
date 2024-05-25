@@ -2,22 +2,45 @@ package bdns
 
 import (
 	"bytes"
+	"certbot/provider"
+	"crypto/tls"
 	"encoding/json"
 	"errors"
 	"io"
+	"net"
 	"net/http"
 	"net/url"
 	"strconv"
+	"time"
 )
 
-type ProviderConfig struct {
+var (
+	httpClient = &http.Client{
+		Transport: &http.Transport{
+			Proxy: http.ProxyFromEnvironment,
+			DialContext: (&net.Dialer{
+				Timeout:   30 * time.Second,
+				KeepAlive: 30 * time.Second,
+			}).DialContext,
+			ForceAttemptHTTP2:     true,
+			MaxIdleConns:          100,
+			IdleConnTimeout:       90 * time.Second,
+			TLSHandshakeTimeout:   10 * time.Second,
+			ExpectContinueTimeout: 1 * time.Second,
+			TLSClientConfig:       &tls.Config{InsecureSkipVerify: true},
+		},
+		Timeout: time.Second * 5,
+	}
+)
+
+type Config struct {
 	Addr     string `yaml:"addr"`
 	Username string `yaml:"username"`
 	Password string `yaml:"password"`
 }
 
 type Provider struct {
-	cfg *ProviderConfig
+	cfg *Config
 }
 
 type Record struct {
@@ -30,7 +53,23 @@ type Record struct {
 	Remark string `json:"remark"`
 }
 
-func (p *Provider) PresentTXTRecord(host string, domain string, txt string) error {
+func (p *Provider) Present(host, domain, token, keyAuth string) error {
+	return p.present(
+		provider.ChallengeHost(host),
+		domain,
+		provider.ChallengeValue(keyAuth),
+	)
+}
+
+func (p *Provider) CleanUp(host, domain, token, keyAuth string) error {
+	return p.cleanup(
+		provider.ChallengeHost(host),
+		domain,
+		provider.ChallengeValue(keyAuth),
+	)
+}
+
+func (p *Provider) present(host string, domain string, txt string) error {
 	api := p.cfg.Addr + "/api/v1/domain/" + domain + "/record"
 	body := &bytes.Buffer{}
 	err := json.NewEncoder(body).Encode(&Record{
@@ -51,7 +90,8 @@ func (p *Provider) PresentTXTRecord(host string, domain string, txt string) erro
 
 	return p.errCheck(data)
 }
-func (p *Provider) CleanUpTXTRecord(host string, domain string, txt string) error {
+
+func (p *Provider) cleanup(host string, domain string, txt string) error {
 	ids := make([]string, 0)
 	p.WalkRecord(domain, func(r *Record) {
 		if r.Host != host || r.Domain != domain {

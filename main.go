@@ -1,11 +1,7 @@
 package main
 
 import (
-	"certbot/internal/cmd"
-
-	_ "certbot/provider/bdns"
-
-	_ "certbot/reciever/bvhost"
+	"certbot/cmd"
 )
 
 func main() {

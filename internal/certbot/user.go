@@ -1,7 +1,7 @@
-package model
+package certbot
 
 import (
-	"certbot/internal/config"
+	"certbot/internal/model"
 	"crypto"
 	"crypto/ecdsa"
 	"crypto/elliptic"
@@ -24,10 +24,8 @@ type User struct {
 	Registration *registration.Resource
 }
 
-func NewUser(u *config.User) (*User, error) {
-
+func NewUser(u *model.User) (*User, error) {
 	m := &User{Email: u.Email}
-
 	if data, err := os.ReadFile(u.Key); err != nil {
 		if !os.IsNotExist(err) {
 			return nil, err
