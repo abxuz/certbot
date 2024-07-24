@@ -18,6 +18,8 @@ import (
 
 const CADirURL = "https://acme-v02.api.letsencrypt.org/directory"
 
+// const CADirURL = "https://acme-staging-v02.api.letsencrypt.org/directory"
+
 func (cb *CertBot) Init(config string) error {
 	cfg, err := cb.initConfig(config)
 	if err != nil {

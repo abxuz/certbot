@@ -3,6 +3,7 @@ package certbot
 import (
 	"certbot/provider"
 	"fmt"
+	"strings"
 )
 
 type delegatedProvider struct {
@@ -24,10 +25,12 @@ func (d *Delegater) fqdn(host, domain string) string {
 }
 
 func (d *Delegater) SetProvider(host, domain string, p provider.Provider) error {
-	fqdn := d.fqdn(host, domain)
-	if _, ok := d.providers[fqdn]; ok {
-		return fmt.Errorf("duplicate host [%v] and domain [%v]", host, domain)
+	if host == "*" {
+		host = ""
+	} else {
+		host = strings.TrimPrefix(host, "*.")
 	}
+	fqdn := d.fqdn(host, domain)
 	d.providers[fqdn] = &delegatedProvider{
 		Host:     host,
 		Domain:   domain,
