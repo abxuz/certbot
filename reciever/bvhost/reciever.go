@@ -16,7 +16,7 @@ var (
 		Transport: &http.Transport{
 			Proxy: http.ProxyFromEnvironment,
 			DialContext: (&net.Dialer{
-				Timeout:   30 * time.Second,
+				Timeout:   5 * time.Second,
 				KeepAlive: 30 * time.Second,
 			}).DialContext,
 			ForceAttemptHTTP2:     true,

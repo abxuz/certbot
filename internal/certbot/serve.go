@@ -1,6 +1,7 @@
 package certbot
 
 import (
+	"log"
 	"os"
 	"path/filepath"
 	"time"
@@ -23,6 +24,7 @@ func (cb *CertBot) ServeOnce() {
 	for _, request := range cb.requests {
 		cert, err := request.LoadCert()
 		if err != nil {
+			log.Println(err)
 			continue
 		}
 		if cert != nil && time.Until(cert.NotAfter) >= 2*30*24*time.Hour {
@@ -37,6 +39,8 @@ func (cb *CertBot) ServeOnce() {
 }
 
 func (cb *CertBot) DoRequest(request *CertRequest) error {
+	log.Printf("DoRequest for: %v", request.Name)
+
 	obtain := certificate.ObtainRequest{
 		Domains: request.Domains,
 		Bundle:  true,
@@ -44,6 +48,7 @@ func (cb *CertBot) DoRequest(request *CertRequest) error {
 
 	certificates, err := request.Client.Certificate.Obtain(obtain)
 	if err != nil {
+		log.Printf("DoRequest for [%v] Obtain error: %v", request.Name, err)
 		return err
 	}
 
@@ -53,14 +58,22 @@ func (cb *CertBot) DoRequest(request *CertRequest) error {
 	for _, reciever := range request.Recievers {
 		err = reciever.PushCert(request.Name, certData)
 		if err != nil {
+			log.Printf("DoRequest for [%v] PushCert error: %v", request.Name, err)
 			return err
 		}
 	}
 
 	err = os.MkdirAll(filepath.Dir(request.File), 0655)
 	if err != nil {
+		log.Printf("DoRequest for [%v] MkdirAll error: %v", request.Name, err)
 		return err
 	}
 
-	return os.WriteFile(request.File, certData, 0655)
+	err = os.WriteFile(request.File, certData, 0655)
+	if err != nil {
+		log.Printf("DoRequest for [%v] WriteFile error: %v", request.Name, err)
+		return err
+	}
+
+	return nil
 }
