@@ -3,13 +3,12 @@ package certbot
 import (
 	"certbot/internal/model"
 	"certbot/provider"
-	"certbot/provider/bdns"
-	"certbot/provider/cloudflare"
 	"certbot/reciever"
 	"certbot/reciever/bvhost"
 	"fmt"
 	"os"
 
+	"github.com/go-acme/lego/v4/challenge"
 	"github.com/go-acme/lego/v4/challenge/dns01"
 	"github.com/go-acme/lego/v4/lego"
 	"github.com/go-acme/lego/v4/registration"
@@ -52,6 +51,11 @@ func (cb *CertBot) Init(config string) error {
 			return fmt.Errorf("user %v in cert not found", cert.User)
 		}
 
+		provider, ok := providerMap[cert.Provider]
+		if !ok {
+			return fmt.Errorf("provider %v in cert not found", cert.Provider)
+		}
+
 		legoCfg := lego.NewConfig(user)
 		legoCfg.CADirURL = CADirURL
 		legoCfg.Certificate.KeyType = user.KeyType
@@ -60,29 +64,8 @@ func (cb *CertBot) Init(config string) error {
 			return err
 		}
 
-		domains := make([]string, 0)
-		delegater := NewDelegater()
-
-		for _, domain := range cert.Domains {
-			provider, ok := providerMap[domain.Provider]
-			if !ok {
-				return fmt.Errorf("provider %v in cert not found", domain.Provider)
-			}
-
-			err := delegater.SetProvider(domain.Host, domain.Domain, provider)
-			if err != nil {
-				return err
-			}
-
-			if domain.Host == "" {
-				domains = append(domains, domain.Domain)
-			} else {
-				domains = append(domains, domain.Host+"."+domain.Domain)
-			}
-		}
-
 		client.Challenge.SetDNS01Provider(
-			delegater, dns01.AddRecursiveNameservers([]string{"223.5.5.5"}),
+			provider, dns01.AddRecursiveNameservers([]string{"223.5.5.5"}),
 		)
 
 		recievers := make([]reciever.Reciever, 0)
@@ -98,7 +81,7 @@ func (cb *CertBot) Init(config string) error {
 			Name:      cert.Name,
 			File:      cert.File,
 			Client:    client,
-			Domains:   domains,
+			Domains:   cert.Domains,
 			Recievers: recievers,
 		}
 	}
@@ -175,19 +158,16 @@ func (cb *CertBot) initRecievers(recievers []*model.Reciever) (map[string]reciev
 	return m, nil
 }
 
-func (cb *CertBot) initProviders(providers []*model.Provider) (map[string]provider.Provider, error) {
-	bdns.Init()
-	cloudflare.Init()
-
-	m := make(map[string]provider.Provider)
+func (cb *CertBot) initProviders(providers []*model.Provider) (map[string]challenge.Provider, error) {
+	m := make(map[string]challenge.Provider)
 	for _, cfg := range providers {
 		if _, ok := m[cfg.Name]; ok {
 			return nil, fmt.Errorf("duplicate provider name %v", cfg.Name)
 		}
 
-		factory := provider.GetFactory(cfg.Provider)
+		factory := provider.GetFactory(cfg.Type)
 		if factory == nil {
-			return nil, fmt.Errorf("unkown provider type %v", cfg.Provider)
+			return nil, fmt.Errorf("unkown provider type %v", cfg.Type)
 		}
 
 		p, err := factory.NewProvider(cfg.Config)

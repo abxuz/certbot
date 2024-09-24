@@ -12,9 +12,9 @@ func (f *factory) Name() string {
 	return "bvhost"
 }
 
-func (f *factory) NewReciever(cfg reciever.Unmarshaler) (reciever.Reciever, error) {
+func (f *factory) NewReciever(cfg reciever.ConfigDecoder) (reciever.Reciever, error) {
 	r := new(Reciever)
-	err := cfg.Unmarshal(&r.cfg)
+	err := cfg.Decode(&r.cfg)
 	if err != nil {
 		return nil, err
 	}

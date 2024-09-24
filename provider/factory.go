@@ -1,20 +1,26 @@
 package provider
 
-type Unmarshaler interface {
-	Unmarshal(v any) error
+import "github.com/go-acme/lego/v4/challenge"
+
+type ConfigDecoder interface {
+	Decode(v any) error
 }
 
 type Factory interface {
-	Name() string
-	NewProvider(cfg Unmarshaler) (Provider, error)
+	NewProvider(cfg ConfigDecoder) (challenge.Provider, error)
+}
+
+type FactoryFunc func(cfg ConfigDecoder) (challenge.Provider, error)
+
+func (f FactoryFunc) NewProvider(cfg ConfigDecoder) (challenge.Provider, error) {
+	return f(cfg)
 }
 
 var (
 	factories = make(map[string]Factory)
 )
 
-func RegisterFactory(factory Factory) {
-	name := factory.Name()
+func RegisterFactory(name string, factory Factory) {
 	if _, ok := factories[name]; ok {
 		panic("duplicate provider factory name registered")
 	}

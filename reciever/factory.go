@@ -1,12 +1,12 @@
 package reciever
 
-type Unmarshaler interface {
-	Unmarshal(v any) error
+type ConfigDecoder interface {
+	Decode(v any) error
 }
 
 type Factory interface {
 	Name() string
-	NewReciever(cfg Unmarshaler) (Reciever, error)
+	NewReciever(cfg ConfigDecoder) (Reciever, error)
 }
 
 var (

@@ -11,7 +11,7 @@ func (c *YamlRaw) UnmarshalYAML(node *yaml.Node) error {
 	return nil
 }
 
-func (c *YamlRaw) Unmarshal(v any) error {
+func (c *YamlRaw) Decode(v any) error {
 	return c.node.Decode(v)
 }
 
@@ -34,21 +34,16 @@ type Reciever struct {
 }
 
 type Provider struct {
-	Name     string   `yaml:"name"`
-	Provider string   `yaml:"provider"`
-	Config   *YamlRaw `yaml:"config"`
+	Name   string   `yaml:"name"`
+	Type   string   `yaml:"type"`
+	Config *YamlRaw `yaml:"config"`
 }
 
 type Cert struct {
-	Name      string    `yaml:"name"`
-	File      string    `yaml:"file"`
-	User      string    `yaml:"user"`
-	Domains   []*Domain `yaml:"domains"`
-	Recievers []string  `yaml:"recievers"`
-}
-
-type Domain struct {
-	Host     string `yaml:"host"`
-	Domain   string `yaml:"domain"`
-	Provider string `yaml:"provider"`
+	Name      string   `yaml:"name"`
+	File      string   `yaml:"file"`
+	User      string   `yaml:"user"`
+	Provider  string   `yaml:"provider"`
+	Domains   []string `yaml:"domains"`
+	Recievers []string `yaml:"recievers"`
 }
