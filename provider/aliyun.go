@@ -6,11 +6,11 @@ import (
 )
 
 type AliyunProviderConfig struct {
-	RAMRole string `yaml:"ram_role"`
+	AccessKeyId     string `yaml:"access_key_id"`
+	AccessKeySecret string `yaml:"access_key_secret"`
+	AccessToken     string `yaml:"access_token"`
 
-	APIKey        string `yaml:"api_key"`
-	SecretKey     string `yaml:"secret_key"`
-	SecurityToken string `yaml:"security_token"`
+	RAMRole string `yaml:"ram_role"`
 }
 
 func NewAliyunProvider(cfg ConfigDecoder) (challenge.Provider, error) {
@@ -20,9 +20,10 @@ func NewAliyunProvider(cfg ConfigDecoder) (challenge.Provider, error) {
 	}
 
 	config := alidns.NewDefaultConfig()
-	config.APIKey = c.APIKey
-	config.SecretKey = c.SecretKey
-	config.SecurityToken = c.SecurityToken
+	config.APIKey = c.AccessKeyId
+	config.SecretKey = c.AccessKeySecret
+	config.SecurityToken = c.AccessToken
+	config.RAMRole = c.RAMRole
 
 	return alidns.NewDNSProviderConfig(config)
 }
