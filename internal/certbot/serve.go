@@ -2,11 +2,8 @@ package certbot
 
 import (
 	"log"
-	"os"
-	"path/filepath"
 	"time"
 
-	"github.com/go-acme/lego/v4/certificate"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -41,39 +38,21 @@ func (cb *CertBot) ServeOnce() {
 func (cb *CertBot) DoRequest(request *CertRequest) error {
 	log.Printf("DoRequest for: %v", request.Name)
 
-	obtain := certificate.ObtainRequest{
-		Domains: request.Domains,
-		Bundle:  true,
-	}
-
-	certificates, err := request.Client.Certificate.Obtain(obtain)
+	cert, err := request.ObtainCert()
 	if err != nil {
-		log.Printf("DoRequest for [%v] Obtain error: %v", request.Name, err)
+		log.Println("failed to obtain cert", err)
 		return err
 	}
 
-	certStr := string(certificates.Certificate) + string(certificates.IssuerCertificate) + string(certificates.PrivateKey)
-	certData := []byte(certStr)
-
-	for _, reciever := range request.Recievers {
-		err = reciever.PushCert(request.Name, certData)
-		if err != nil {
-			log.Printf("DoRequest for [%v] PushCert error: %v", request.Name, err)
-			return err
-		}
-	}
-
-	err = os.MkdirAll(filepath.Dir(request.File), 0655)
+	err = request.WriteCert(cert)
 	if err != nil {
-		log.Printf("DoRequest for [%v] MkdirAll error: %v", request.Name, err)
+		log.Println("failed to write cert", err)
 		return err
 	}
 
-	err = os.WriteFile(request.File, certData, 0655)
+	err = request.PushCert(cert)
 	if err != nil {
-		log.Printf("DoRequest for [%v] WriteFile error: %v", request.Name, err)
-		return err
+		log.Println("failed to push cert", err)
 	}
-
 	return nil
 }
